@@ -1,0 +1,55 @@
+map $sent_http_content_type $expires {
+    "text/html"                 epoch;
+    "text/html; charset=utf-8"  epoch;
+    default                     off;
+}
+
+server {
+    server_name www.qualifiterra.ru;
+    return 301 https://qualifiterra.ru$request_uri;
+}
+
+server {             # the port nginx is listening on
+    server_name     qualifiterra.ru; # setup your domain here
+    gzip            on;
+    gzip_types      text/plain application/xml text/css application/javascript;
+    gzip_min_length 1000;
+   #return 301 https://qualifiterra.ru$request_uri;
+    location / {
+        expires $expires;
+
+	proxy_buffering			    off;
+        proxy_redirect                      off;
+        proxy_set_header Host               $host;
+        proxy_set_header X-Real-IP          $remote_addr;
+        proxy_set_header X-Forwarded-For    $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto  $scheme;
+        proxy_read_timeout          1m;
+        proxy_connect_timeout       1m;
+        proxy_pass                          http://127.0.0.1:8055; # set the address of the Node.js instance here
+	auth_basic "are you sure?";
+        auth_basic_user_file /etc/nginx/auth.basic;
+    }
+    
+   # if ($host ~ "^www\.(.*)$") {
+   #             return 301 $scheme://$1$request_uri;
+   # }
+    
+
+
+   # if ($host = http://qualifiterra.ru) {
+   #      return 301 https://qualifiterra.ru$request_uri;
+   # } 
+
+    
+
+    listen 443 ssl; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/qualifiterra.ru/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/qualifiterra.ru/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+
+   # return 301 https://qualifiterra.ru$request_uri;
+
+}
+
